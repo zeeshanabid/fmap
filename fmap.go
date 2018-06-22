@@ -18,24 +18,48 @@ const (
 type fmap struct {
 	size     uint
 	capacity uint64
+	values   []interface{}
 }
 
 func (m *fmap) Put(key interface{}, value interface{}) (interface{}, error) {
-	return nil, nil
+	i, err := m.getIndex(key)
+	if err != nil {
+		return nil, err
+	}
+	oldValue := m.values[i]
+	m.values[i] = value
+	return oldValue, nil
 }
 
 func (m *fmap) Get(key interface{}) (interface{}, error) {
-	return nil, nil
+	i, err := m.getIndex(key)
+	if err != nil {
+		return nil, err
+	}
+	return m.values[i], nil
 }
 
 func New() Hash {
-	return &fmap{
-		size:     defaultSize,
-		capacity: 1 << defaultSize,
-	}
+	m := fmap{}
+	m.setValues(defaultSize)
+	return &m
 }
 
-func (m *fmap) fibonacciIndex(k uint64) uint {
+func (m *fmap) setValues(size uint) {
+	m.size = size
+	m.capacity = 1 << m.size
+	m.values = make([]interface{}, m.capacity, m.capacity)
+}
+
+func (m *fmap) getIndex(key interface{}) (uint, error) {
+	c, err := getCode(key)
+	if err != nil {
+		return 0, err
+	}
+	return m.fibonacciHash(c), nil
+}
+
+func (m *fmap) fibonacciHash(k uint64) uint {
 	s := 64 - m.size
 	k ^= k >> s
 	return uint(uint64(11400714819323198485*uint64(k)) >> s)
