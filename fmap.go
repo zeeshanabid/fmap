@@ -11,7 +11,12 @@ type Hash interface {
 	Get(k interface{}) (interface{}, error)
 }
 
+const (
+	defaultSize = 4
+)
 type fmap struct {
+	size     uint
+	capacity uint64
 }
 
 func (m *fmap) Put(k interface{}, v interface{}) (interface{}, error) {
@@ -23,7 +28,16 @@ func (m *fmap) Get(k interface{}) (interface{}, error) {
 }
 
 func New() Hash {
-	return &fmap{}
+	return &fmap{
+		size:     defaultSize,
+		capacity: 1 << defaultSize,
+	}
+}
+
+func (m *fmap) fibonacciIndex(k uint64) uint {
+	s := 64 - m.size
+	k ^= k >> s
+	return uint(uint64(11400714819323198485*uint64(k)) >> s)
 }
 
 func hashCode(b []byte) uint64 {
