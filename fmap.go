@@ -6,6 +6,26 @@ import (
 	"hash/fnv"
 )
 
+type Hash interface {
+	Put(k interface{}, v interface{}) (interface{}, error)
+	Get(k interface{}) (interface{}, error)
+}
+
+type fmap struct {
+}
+
+func (m *fmap) Put(k interface{}, v interface{}) (interface{}, error) {
+	return nil, nil
+}
+
+func (m *fmap) Get(k interface{}) (interface{}, error) {
+	return nil, nil
+}
+
+func New() Hash {
+	return &fmap{}
+}
+
 func hashCode(b []byte) uint64 {
 	hash := fnv.New64a()
 	hash.Write(b)
