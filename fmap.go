@@ -7,23 +7,24 @@ import (
 )
 
 type Hash interface {
-	Put(k interface{}, v interface{}) (interface{}, error)
-	Get(k interface{}) (interface{}, error)
+	Put(key interface{}, value interface{}) (interface{}, error)
+	Get(key interface{}) (interface{}, error)
 }
 
 const (
 	defaultSize = 4
 )
+
 type fmap struct {
 	size     uint
 	capacity uint64
 }
 
-func (m *fmap) Put(k interface{}, v interface{}) (interface{}, error) {
+func (m *fmap) Put(key interface{}, value interface{}) (interface{}, error) {
 	return nil, nil
 }
 
-func (m *fmap) Get(k interface{}) (interface{}, error) {
+func (m *fmap) Get(key interface{}) (interface{}, error) {
 	return nil, nil
 }
 
