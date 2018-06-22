@@ -21,3 +21,11 @@ func getBytes(d interface{}) ([]byte, error) {
 	}
 	return buf.Bytes(), nil
 }
+
+func getCode(k interface{}) (code uint64, err error) {
+	b, err := getBytes(k)
+	if err != nil {
+		return 0, err
+	}
+	return hashCode(b), nil
+}
