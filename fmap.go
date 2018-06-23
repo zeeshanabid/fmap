@@ -16,30 +16,33 @@ type Hash interface {
 }
 
 const (
-	defaultSize       = 4
-	defaultLoadFactor = 0.65
+	defaultSize          uint    = 4
+	defaultMaxLoadFactor float32 = 0.65
+	defaultMinLoadFactor float32 = 0.30
 )
 
 type fmap struct {
-	size       uint
-	capacity   uint64
-	keyCount   uint64
-	loadFactor float32
-	threshold  uint64
-	keys       []interface{}
-	values     []interface{}
+	size          uint
+	capacity      uint64
+	keyCount      uint64
+	maxLoadFactor float32
+	minLoadFactor float32
+	maxThreshold  uint64
+	minThreshold  uint64
+	keys          []interface{}
+	values        []interface{}
 }
 
 func (m *fmap) Put(key interface{}, value interface{}) (interface{}, error) {
+	if m.keyCount >= m.maxThreshold {
+		m.increaseSize(1)
+	}
 	i, err := m.getIndex(key)
 	if err != nil {
 		return nil, err
 	}
 	if m.keys[i] == nil {
 		m.keyCount++
-	}
-	if m.keyCount > m.threshold {
-		m.resize()
 	}
 	oldValue := m.values[i]
 	m.keys[i] = key
@@ -56,6 +59,9 @@ func (m *fmap) Get(key interface{}) (interface{}, error) {
 }
 
 func (m *fmap) Delete(key interface{}) (interface{}, error) {
+	if m.keyCount <= m.minThreshold {
+		m.decreaseSize(1)
+	}
 	i, err := m.getIndex(key)
 	if err != nil {
 		return nil, err
@@ -95,23 +101,34 @@ func (m *fmap) Length() uint64 {
 
 func New() Hash {
 	m := fmap{}
-	m.setValues(defaultSize, defaultLoadFactor)
+	m.setValues(defaultSize, defaultMaxLoadFactor, defaultMinLoadFactor)
 	return &m
 }
 
-func (m *fmap) setValues(size uint, loadFactor float32) {
+func (m *fmap) setValues(size uint, maxLoadFactor, minLoadFactor float32) {
 	m.size = size
 	m.capacity = 1 << m.size
-	m.loadFactor = loadFactor
-	m.threshold = uint64(float32(m.capacity) * m.loadFactor)
+	m.maxLoadFactor = maxLoadFactor
+	m.minLoadFactor = minLoadFactor
+	m.maxThreshold = uint64(float32(m.capacity) * m.maxLoadFactor)
+	m.minThreshold = uint64(float32(m.capacity) * m.minLoadFactor)
 	m.keyCount = 0
 	m.keys = make([]interface{}, m.capacity, m.capacity)
 	m.values = make([]interface{}, m.capacity, m.capacity)
 }
 
-func (m *fmap) resize() {
+func (m *fmap) increaseSize(size uint) {
+	m.resize(m.size + size)
+}
+
+func (m *fmap) decreaseSize(size uint) {
+	newSize := maxInt(defaultSize, m.size-size)
+	m.resize(newSize)
+}
+
+func (m *fmap) resize(newSize uint) {
 	keys, values := m.keys, m.values
-	m.setValues(m.size+1, m.loadFactor)
+	m.setValues(newSize, m.maxLoadFactor, m.minLoadFactor)
 
 	for i := 0; i < len(keys); i++ {
 		if keys[i] != nil {
@@ -156,4 +173,11 @@ func getCode(k interface{}) (code uint64, err error) {
 		return 0, err
 	}
 	return hashCode(b), nil
+}
+
+func maxInt(a, b uint) uint {
+	if a > b {
+		return a
+	}
+	return b
 }
