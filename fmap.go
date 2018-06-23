@@ -11,6 +11,7 @@ type Hash interface {
 	Get(key interface{}) (interface{}, error)
 	Keys() []interface{}
 	Values() []interface{}
+	Length() uint64
 }
 
 const (
@@ -20,6 +21,7 @@ const (
 type fmap struct {
 	size     uint
 	capacity uint64
+	keyCount uint64
 	keys     []interface{}
 	values   []interface{}
 }
@@ -28,6 +30,9 @@ func (m *fmap) Put(key interface{}, value interface{}) (interface{}, error) {
 	i, err := m.getIndex(key)
 	if err != nil {
 		return nil, err
+	}
+	if m.keys[i] == nil {
+		m.keyCount++
 	}
 	oldValue := m.values[i]
 	m.keys[i] = key
@@ -61,6 +66,10 @@ func (m *fmap) Values() []interface{} {
 		}
 	}
 	return values
+}
+
+func (m *fmap) Length() uint64 {
+	return m.keyCount
 }
 
 func New() Hash {
