@@ -9,6 +9,7 @@ import (
 type Hash interface {
 	Put(key interface{}, value interface{}) error
 	Get(key interface{}) (interface{}, bool, error)
+	Has(key interface{}) (bool, error)
 	Delete(key interface{}) error
 	Pop(key interface{}) (interface{}, error)
 	Keys() []interface{}
@@ -85,6 +86,11 @@ func (m *fmap) Get(key interface{}) (interface{}, bool, error) {
 		return nil, false, nil
 	}
 	return m.values[i], true, nil
+}
+
+func (m *fmap) Has(key interface{}) (bool, error) {
+	_, ok, err := m.Get(key)
+	return ok, err
 }
 
 func (m *fmap) Delete(key interface{}) error {
