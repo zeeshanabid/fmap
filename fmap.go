@@ -17,6 +17,12 @@ type Map interface {
 	Length() uint64
 }
 
+type MapOptions struct {
+	Size          uint
+	MaxLoadFactor float32
+	MinLoadFactor float32
+}
+
 const (
 	defaultSize          uint    = 4
 	defaultMaxLoadFactor float32 = 0.65
@@ -149,8 +155,19 @@ func (m *fmap) Length() uint64 {
 }
 
 func New() Map {
+	return NewWithOptions(MapOptions{})
+}
+
+func NewWithOptions(opts MapOptions) Map {
+	opts.Size = maxInt(opts.Size, defaultSize)
+	if opts.MaxLoadFactor == 0 {
+		opts.MaxLoadFactor = defaultMaxLoadFactor
+	}
+	if opts.MinLoadFactor == 0 {
+		opts.MinLoadFactor = defaultMinLoadFactor
+	}
 	m := fmap{}
-	m.setValues(defaultSize, defaultMaxLoadFactor, defaultMinLoadFactor)
+	m.setValues(opts.Size, opts.MaxLoadFactor, opts.MinLoadFactor)
 	return &m
 }
 
