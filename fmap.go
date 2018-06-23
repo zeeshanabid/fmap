@@ -21,9 +21,14 @@ const (
 	defaultMinLoadFactor float32 = 0.30
 )
 
+type d struct{}
+
+var deleted = d{}
+
 type fmap struct {
 	size          uint
 	capacity      uint64
+	maxIndex      uint64
 	keyCount      uint64
 	maxLoadFactor float32
 	minLoadFactor float32
@@ -41,12 +46,31 @@ func (m *fmap) Put(key interface{}, value interface{}) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	if m.keys[i] == nil {
+
+	delFound := false
+	delIndex := uint(0)
+	for m.keys[i] != nil && m.keys[i] != key {
+		if m.keys[i] == deleted && !delFound {
+			delFound = true
+			delIndex = i
+		}
+		i = uint(uint64(i+1) & m.maxIndex)
+	}
+	if m.keys[i] != key {
 		m.keyCount++
 	}
-	oldValue := m.values[i]
+	var oldValue interface{}
+	if m.keys[i] == key && delFound {
+		oldValue = m.values[i]
+		m.keys[i] = nil
+		m.values[i] = nil
+	}
+	if delFound {
+		i = delIndex
+	}
 	m.keys[i] = key
 	m.values[i] = value
+
 	return oldValue, nil
 }
 
@@ -54,6 +78,9 @@ func (m *fmap) Get(key interface{}) (interface{}, error) {
 	i, err := m.getIndex(key)
 	if err != nil {
 		return nil, err
+	}
+	for m.keys[i] != nil && m.keys[i] != key {
+		i = uint(uint64(i+1) & m.maxIndex)
 	}
 	return m.values[i], nil
 }
@@ -66,11 +93,16 @@ func (m *fmap) Delete(key interface{}) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	if m.keys[i] != nil {
-		m.keyCount--
+	for m.keys[i] != nil && m.keys[i] != key {
+		i = uint(uint64(i+1) & m.maxIndex)
 	}
+	if m.keys[i] != key {
+		return nil, nil
+	}
+
+	m.keyCount--
 	value := m.values[i]
-	m.keys[i] = nil
+	m.keys[i] = deleted
 	m.values[i] = nil
 	return value, nil
 }
@@ -78,7 +110,7 @@ func (m *fmap) Delete(key interface{}) (interface{}, error) {
 func (m *fmap) Keys() []interface{} {
 	var keys []interface{}
 	for _, k := range m.keys {
-		if k != nil {
+		if k != nil && k != deleted {
 			keys = append(keys, k)
 		}
 	}
@@ -108,6 +140,7 @@ func New() Hash {
 func (m *fmap) setValues(size uint, maxLoadFactor, minLoadFactor float32) {
 	m.size = size
 	m.capacity = 1 << m.size
+	m.maxIndex = m.capacity - 1
 	m.maxLoadFactor = maxLoadFactor
 	m.minLoadFactor = minLoadFactor
 	m.maxThreshold = uint64(float32(m.capacity) * m.maxLoadFactor)
@@ -123,7 +156,9 @@ func (m *fmap) increaseSize(size uint) {
 
 func (m *fmap) decreaseSize(size uint) {
 	newSize := maxInt(defaultSize, m.size-size)
-	m.resize(newSize)
+	if newSize != m.size {
+		m.resize(newSize)
+	}
 }
 
 func (m *fmap) resize(newSize uint) {
