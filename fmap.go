@@ -6,7 +6,7 @@ import (
 	"hash/fnv"
 )
 
-type Hash interface {
+type Map interface {
 	Put(key interface{}, value interface{}) error
 	Get(key interface{}) (interface{}, bool, error)
 	Has(key interface{}) (bool, error)
@@ -148,7 +148,7 @@ func (m *fmap) Length() uint64 {
 	return m.keyCount
 }
 
-func New() Hash {
+func New() Map {
 	m := fmap{}
 	m.setValues(defaultSize, defaultMaxLoadFactor, defaultMinLoadFactor)
 	return &m
