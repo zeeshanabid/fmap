@@ -7,9 +7,10 @@ import (
 )
 
 type Hash interface {
-	Put(key interface{}, value interface{}) (interface{}, error)
-	Get(key interface{}) (interface{}, error)
-	Delete(key interface{}) (interface{}, error)
+	Put(key interface{}, value interface{}) error
+	Get(key interface{}) (interface{}, bool, error)
+	Delete(key interface{}) error
+	Pop(key interface{}) (interface{}, error)
 	Keys() []interface{}
 	Values() []interface{}
 	Length() uint64
@@ -38,13 +39,13 @@ type fmap struct {
 	values        []interface{}
 }
 
-func (m *fmap) Put(key interface{}, value interface{}) (interface{}, error) {
+func (m *fmap) Put(key interface{}, value interface{}) error {
 	if m.keyCount >= m.maxThreshold {
 		m.increaseSize(1)
 	}
 	i, err := m.getIndex(key)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	delFound := false
@@ -59,9 +60,7 @@ func (m *fmap) Put(key interface{}, value interface{}) (interface{}, error) {
 	if m.keys[i] != key {
 		m.keyCount++
 	}
-	var oldValue interface{}
 	if m.keys[i] == key && delFound {
-		oldValue = m.values[i]
 		m.keys[i] = nil
 		m.values[i] = nil
 	}
@@ -71,21 +70,33 @@ func (m *fmap) Put(key interface{}, value interface{}) (interface{}, error) {
 	m.keys[i] = key
 	m.values[i] = value
 
-	return oldValue, nil
+	return nil
 }
 
-func (m *fmap) Get(key interface{}) (interface{}, error) {
+func (m *fmap) Get(key interface{}) (interface{}, bool, error) {
 	i, err := m.getIndex(key)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	for m.keys[i] != nil && m.keys[i] != key {
 		i = uint(uint64(i+1) & m.maxIndex)
 	}
-	return m.values[i], nil
+	if m.keys[i] != key {
+		return nil, false, nil
+	}
+	return m.values[i], true, nil
 }
 
-func (m *fmap) Delete(key interface{}) (interface{}, error) {
+func (m *fmap) Delete(key interface{}) error {
+	_, err := m.remove(key)
+	return err
+}
+
+func (m *fmap) Pop(key interface{}) (interface{}, error) {
+	return m.remove(key)
+}
+
+func (m *fmap) remove(key interface{}) (interface{}, error) {
 	if m.keyCount <= m.minThreshold {
 		m.decreaseSize(1)
 	}
@@ -101,10 +112,10 @@ func (m *fmap) Delete(key interface{}) (interface{}, error) {
 	}
 
 	m.keyCount--
-	value := m.values[i]
+	old := m.values[i]
 	m.keys[i] = deleted
 	m.values[i] = nil
-	return value, nil
+	return old, nil
 }
 
 func (m *fmap) Keys() []interface{} {
