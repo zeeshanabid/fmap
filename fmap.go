@@ -16,15 +16,18 @@ type Hash interface {
 }
 
 const (
-	defaultSize = 4
+	defaultSize       = 4
+	defaultLoadFactor = 0.65
 )
 
 type fmap struct {
-	size     uint
-	capacity uint64
-	keyCount uint64
-	keys     []interface{}
-	values   []interface{}
+	size       uint
+	capacity   uint64
+	keyCount   uint64
+	loadFactor float32
+	threshold  uint64
+	keys       []interface{}
+	values     []interface{}
 }
 
 func (m *fmap) Put(key interface{}, value interface{}) (interface{}, error) {
@@ -34,6 +37,9 @@ func (m *fmap) Put(key interface{}, value interface{}) (interface{}, error) {
 	}
 	if m.keys[i] == nil {
 		m.keyCount++
+	}
+	if m.keyCount > m.threshold {
+		m.resize()
 	}
 	oldValue := m.values[i]
 	m.keys[i] = key
@@ -89,15 +95,29 @@ func (m *fmap) Length() uint64 {
 
 func New() Hash {
 	m := fmap{}
-	m.setValues(defaultSize)
+	m.setValues(defaultSize, defaultLoadFactor)
 	return &m
 }
 
-func (m *fmap) setValues(size uint) {
+func (m *fmap) setValues(size uint, loadFactor float32) {
 	m.size = size
 	m.capacity = 1 << m.size
+	m.loadFactor = loadFactor
+	m.threshold = uint64(float32(m.capacity) * m.loadFactor)
+	m.keyCount = 0
 	m.keys = make([]interface{}, m.capacity, m.capacity)
 	m.values = make([]interface{}, m.capacity, m.capacity)
+}
+
+func (m *fmap) resize() {
+	keys, values := m.keys, m.values
+	m.setValues(m.size+1, m.loadFactor)
+
+	for i := 0; i < len(keys); i++ {
+		if keys[i] != nil {
+			m.Put(keys[i], values[i])
+		}
+	}
 }
 
 func (m *fmap) getIndex(key interface{}) (uint, error) {
