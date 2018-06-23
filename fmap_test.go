@@ -1,6 +1,8 @@
 package fmap
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestHashCode(t *testing.T) {
 	code := hashCode(nil)
@@ -19,5 +21,30 @@ func TestHashCode(t *testing.T) {
 
 	if code != expected {
 		t.Errorf("Expected hashcode %d, got %d", expected, code)
+	}
+}
+
+func TestNewMap(t *testing.T) {
+	m := New()
+	hm, ok := m.(*fmap)
+
+	if !ok {
+		t.Errorf("Expected type fmap %t, got %t", true, ok)
+	}
+
+	if hm.size != defaultSize {
+		t.Errorf("Expected size %d, got %d", defaultSize, hm.size)
+	}
+
+	if hm.Length() != 0 {
+		t.Errorf("Expected length %d, got %d", 0, hm.Length())
+	}
+
+	if len(hm.Keys()) != 0 {
+		t.Errorf("Expected keys length %d, got %d", 0, len(hm.Keys()))
+	}
+
+	if len(hm.Values()) != 0 {
+		t.Errorf("Expected values length %d, got %d", 0, len(hm.Values()))
 	}
 }
