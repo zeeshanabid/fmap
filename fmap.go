@@ -9,6 +9,7 @@ import (
 type Hash interface {
 	Put(key interface{}, value interface{}) (interface{}, error)
 	Get(key interface{}) (interface{}, error)
+	Delete(key interface{}) (interface{}, error)
 	Keys() []interface{}
 	Values() []interface{}
 	Length() uint64
@@ -46,6 +47,20 @@ func (m *fmap) Get(key interface{}) (interface{}, error) {
 		return nil, err
 	}
 	return m.values[i], nil
+}
+
+func (m *fmap) Delete(key interface{}) (interface{}, error) {
+	i, err := m.getIndex(key)
+	if err != nil {
+		return nil, err
+	}
+	if m.keys[i] != nil {
+		m.keyCount--
+	}
+	value := m.values[i]
+	m.keys[i] = nil
+	m.values[i] = nil
+	return value, nil
 }
 
 func (m *fmap) Keys() []interface{} {
