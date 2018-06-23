@@ -18,6 +18,7 @@ const (
 type fmap struct {
 	size     uint
 	capacity uint64
+	keys     []interface{}
 	values   []interface{}
 }
 
@@ -27,6 +28,7 @@ func (m *fmap) Put(key interface{}, value interface{}) (interface{}, error) {
 		return nil, err
 	}
 	oldValue := m.values[i]
+	m.keys[i] = key
 	m.values[i] = value
 	return oldValue, nil
 }
@@ -48,6 +50,7 @@ func New() Hash {
 func (m *fmap) setValues(size uint) {
 	m.size = size
 	m.capacity = 1 << m.size
+	m.keys = make([]interface{}, m.capacity, m.capacity)
 	m.values = make([]interface{}, m.capacity, m.capacity)
 }
 
