@@ -9,6 +9,8 @@ import (
 type Hash interface {
 	Put(key interface{}, value interface{}) (interface{}, error)
 	Get(key interface{}) (interface{}, error)
+	Keys() []interface{}
+	Values() []interface{}
 }
 
 const (
@@ -39,6 +41,26 @@ func (m *fmap) Get(key interface{}) (interface{}, error) {
 		return nil, err
 	}
 	return m.values[i], nil
+}
+
+func (m *fmap) Keys() []interface{} {
+	var keys []interface{}
+	for _, k := range m.keys {
+		if k != nil {
+			keys = append(keys, k)
+		}
+	}
+	return keys
+}
+
+func (m *fmap) Values() []interface{} {
+	var values []interface{}
+	for _, v := range m.values {
+		if v != nil {
+			values = append(values, v)
+		}
+	}
+	return values
 }
 
 func New() Hash {
