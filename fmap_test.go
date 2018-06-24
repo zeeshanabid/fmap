@@ -177,3 +177,14 @@ func TestPop(t *testing.T) {
 		t.Error("Element should be nil")
 	}
 }
+
+func TestLength(t *testing.T) {
+	m := New()
+	n := 1000
+	for i := 1; i <= n; i++ {
+		_ = m.Put(i, i)
+	}
+	if m.Length() != uint64(n) {
+		t.Errorf("Expected %d elements got %d", n, m.Length())
+	}
+}
