@@ -1,2 +1,5 @@
 # fmap
-A golang implementation of fibonachi map
+A golang implementation of fibonacci map
+
+open addressing
+linear probing
