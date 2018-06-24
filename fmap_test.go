@@ -48,3 +48,18 @@ func TestNewMap(t *testing.T) {
 		t.Errorf("Expected values length %d, got %d", 0, len(hm.Values()))
 	}
 }
+
+func TestPut(t *testing.T) {
+	m := New()
+	n := 100
+	for i := 1; i <= n; i++ {
+		err := m.Put(i, i)
+		if err != nil {
+			t.Errorf("Cannot Put %d", i)
+		}
+	}
+
+	if m.Length() != uint64(n) {
+		t.Errorf("Expected length %d, got %d", n, m.Length())
+	}
+}
