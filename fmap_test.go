@@ -63,3 +63,61 @@ func TestPut(t *testing.T) {
 		t.Errorf("Expected length %d, got %d", n, m.Length())
 	}
 }
+
+func TestGet(t *testing.T) {
+	m := New()
+	val, ok, err := m.Get("Hello")
+
+	if err != nil {
+		t.Errorf("Get should not return error: %s", err)
+	}
+
+	if ok {
+		t.Error("Element should not be present")
+	}
+
+	if val != nil {
+		t.Error("Element should be nil")
+	}
+
+	n := 100
+	for i := 1; i <= n; i++ {
+		_ = m.Put(i, i)
+	}
+
+	for i := 1; i <= n; i++ {
+		val, ok, err := m.Get(i)
+		if err != nil {
+			t.Errorf("Get should not return error: %s", err)
+		}
+
+		if !ok {
+			t.Error("Element should be present")
+		}
+
+		if val == nil {
+			t.Errorf("Element %d should be present", i)
+		}
+	}
+}
+
+func TestHas(t *testing.T) {
+	m := New()
+
+	has, err := m.Has("Hello")
+	if err != nil {
+		t.Errorf("Has should not return error: %s", err)
+	}
+	if has == true {
+		t.Error("Element should not exists")
+	}
+
+	m.Put("world", "!")
+	has, err = m.Has("world")
+	if err != nil {
+		t.Errorf("Has must not return error: %s", err)
+	}
+	if has != true {
+		t.Error("Element must exists")
+	}
+}
