@@ -121,3 +121,59 @@ func TestHas(t *testing.T) {
 		t.Error("Element must exists")
 	}
 }
+
+func TestDelete(t *testing.T) {
+	m := New()
+	m.Put(0, "0")
+	m.Put(13, "13")
+	m.Put(26, "26")
+	m.Put(39, "39")
+
+	err := m.Delete(13)
+	if err != nil {
+		t.Errorf("Delete must not return error: %s", err)
+	}
+
+	has, err := m.Has(13)
+	if has == true {
+		t.Error("Element must not exists after deletion")
+	}
+
+	if m.Length() != uint64(3) {
+		t.Errorf("Expected length %d, got %d", 3, m.Length())
+	}
+
+	m.Put(39, "(39)")
+	if m.Length() != uint64(3) {
+		t.Errorf("Expected length %d, got %d", 3, m.Length())
+	}
+}
+
+func TestPop(t *testing.T) {
+	m := New()
+	m.Put(0, "0")
+	m.Put(13, "13")
+
+	val, err := m.Pop(13)
+	if err != nil {
+		t.Errorf("Pop must not return error: %s", err)
+	}
+
+	if val == nil {
+		t.Errorf("Element should be %s", "13")
+	}
+
+	has, err := m.Has(13)
+	if has == true {
+		t.Error("Element must not exists after pop")
+	}
+
+	val, err = m.Pop(14)
+	if err != nil {
+		t.Errorf("Pop must not return error: %s", err)
+	}
+
+	if val != nil {
+		t.Error("Element should be nil")
+	}
+}
