@@ -188,3 +188,15 @@ func TestLength(t *testing.T) {
 		t.Errorf("Expected %d elements got %d", n, m.Length())
 	}
 }
+
+func TestIsEmpty(t *testing.T) {
+	m := New()
+	if !m.IsEmpty() {
+		t.Error("Map should be empty")
+	}
+
+	m.Put(1, 1)
+	if m.IsEmpty() {
+		t.Error("Map should not be empty")
+	}
+}

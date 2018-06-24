@@ -12,6 +12,7 @@ type Map interface {
 	Has(key interface{}) (bool, error)
 	Delete(key interface{}) error
 	Pop(key interface{}) (interface{}, error)
+	IsEmpty() bool
 	Keys() []interface{}
 	Values() []interface{}
 	Length() uint64
@@ -152,6 +153,10 @@ func (m *fmap) Values() []interface{} {
 
 func (m *fmap) Length() uint64 {
 	return m.keyCount
+}
+
+func (m *fmap) IsEmpty() bool {
+	return m.Length() == 0
 }
 
 func New() Map {
