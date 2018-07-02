@@ -51,34 +51,7 @@ func (m *fmap) Put(key interface{}, value interface{}) error {
 	if m.keyCount >= m.maxThreshold {
 		m.increaseSize(1)
 	}
-	i, err := m.getIndex(key)
-	if err != nil {
-		return err
-	}
-
-	delFound := false
-	delIndex := uint(0)
-	for m.keys[i] != nil && m.keys[i] != key {
-		if m.keys[i] == deleted && !delFound {
-			delFound = true
-			delIndex = i
-		}
-		i = uint(uint64(i+1) & m.maxIndex)
-	}
-	if m.keys[i] != key {
-		m.keyCount++
-	}
-	if m.keys[i] == key && delFound {
-		m.keys[i] = nil
-		m.values[i] = nil
-	}
-	if delFound {
-		i = delIndex
-	}
-	m.keys[i] = key
-	m.values[i] = value
-
-	return nil
+	return m.insert(key, value)
 }
 
 func (m *fmap) Get(key interface{}) (interface{}, bool, error) {
@@ -206,9 +179,39 @@ func (m *fmap) resize(newSize uint) {
 
 	for i := 0; i < len(keys); i++ {
 		if keys[i] != nil {
-			m.Put(keys[i], values[i])
+			m.insert(keys[i], values[i])
 		}
 	}
+}
+
+func (m *fmap) insert(key interface{}, value interface{}) error {
+	i, err := m.getIndex(key)
+	if err != nil {
+		return err
+	}
+
+	delFound := false
+	delIndex := uint(0)
+	for m.keys[i] != nil && m.keys[i] != key {
+		if m.keys[i] == deleted && !delFound {
+			delFound = true
+			delIndex = i
+		}
+		i = uint(uint64(i+1) & m.maxIndex)
+	}
+	if m.keys[i] != key {
+		m.keyCount++
+	}
+	if m.keys[i] == key && delFound {
+		m.keys[i] = nil
+		m.values[i] = nil
+	}
+	if delFound {
+		i = delIndex
+	}
+	m.keys[i] = key
+	m.values[i] = value
+	return nil
 }
 
 func (m *fmap) getIndex(key interface{}) (uint, error) {
